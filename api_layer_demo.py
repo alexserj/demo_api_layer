@@ -1,55 +1,4 @@
 from typing import List, Dict
-class BatchPaymentRequest(BaseModel):
-    payments: List[PaymentRequest]
-
-class BatchPaymentResult(BaseModel):
-    results: List[Dict]
-    summary: Dict
-# Batch payments endpoint
-@app.post("/v1/payments/batch", response_model=BatchPaymentResult)
-def batch_payments(batch: BatchPaymentRequest, user: str = Depends(get_current_user)):
-    results = []
-    success = 0
-    failed = 0
-    for req in batch.payments:
-        try:
-            # Reuse single payment logic
-            fx_rate = None
-            converted_amount = None
-            target_currency = req.target_currency or req.currency
-            if req.target_currency and req.target_currency != req.currency:
-                fx_rate = get_fx_rate(req.currency, req.target_currency)
-                if fx_rate is None:
-                    raise Exception("FX rate not available")
-                converted_amount = round(req.amount * fx_rate, 2)
-            else:
-                converted_amount = req.amount
-            payment_id = cbs_adapter.initiate_payment(req)
-            log_action(user, "batch_initiate_payment", {"payment_id": payment_id, **req.dict(), "fx_rate": fx_rate, "converted_amount": converted_amount, "target_currency": target_currency})
-            results.append({"payment_id": payment_id, "status": "pending", "amount": req.amount, "currency": req.currency, "converted_amount": converted_amount, "target_currency": target_currency})
-            success += 1
-        except Exception as e:
-            results.append({"error": str(e), "payment": req.dict()})
-            failed += 1
-    return BatchPaymentResult(results=results, summary={"success": success, "failed": failed, "total": len(batch.payments)})
-
-# Reconciliation endpoint
-@app.get("/v1/payments/reconciliation")
-def reconciliation():
-    all_payments = []
-    for pid, pdata in cbs_adapter.payments.items():
-        req = pdata["request"]
-        all_payments.append({
-            "payment_id": pid,
-            "from_account": req["from_account"],
-            "to_account": req["to_account"],
-            "amount": req["amount"],
-            "currency": req["currency"],
-            "target_currency": req.get("target_currency"),
-            "status": pdata["status"],
-            "settlement_time": pdata["settlement_time"]
-        })
-    return {"payments": all_payments, "count": len(all_payments)}
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -57,6 +6,8 @@ from datetime import timedelta, datetime
 from pydantic import BaseModel
 from typing import Optional
 from uuid import uuid4
+from fastapi.responses import JSONResponse
+from fastapi.requests import Request
 
 # Model classes
 class PaymentRequest(BaseModel):
@@ -104,12 +55,37 @@ class LegacyCBSAdapter:
         payment["status"] = "settled"
         payment["settlement_time"] = datetime.utcnow().isoformat()
         return payment
+    
+class WebhookRegistration(BaseModel):
+    payment_id: str
+    url: str
 
+class BatchPaymentRequest(BaseModel):
+    payments: List[PaymentRequest]
 
-from fastapi.responses import JSONResponse
-from fastapi.requests import Request
+class BatchPaymentResult(BaseModel):
+    results: List[Dict]
+    summary: Dict
 
 app = FastAPI()
+
+# Reconciliation endpoint
+@app.get("/v1/payments/reconciliation")
+def reconciliation():
+    all_payments = []
+    for pid, pdata in cbs_adapter.payments.items():
+        req = pdata["request"]
+        all_payments.append({
+            "payment_id": pid,
+            "from_account": req["from_account"],
+            "to_account": req["to_account"],
+            "amount": req["amount"],
+            "currency": req["currency"],
+            "target_currency": req.get("target_currency"),
+            "status": pdata["status"],
+            "settlement_time": pdata["settlement_time"]
+        })
+    return {"payments": all_payments, "count": len(all_payments)}
 
 # Global error handler for clearer error responses
 @app.exception_handler(Exception)
@@ -150,7 +126,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/token")
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -162,17 +138,40 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
+        username = payload.get("sub")
         if username is None:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         return username
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-class WebhookRegistration(BaseModel):
-    payment_id: str
-    url: str
-
+# Batch payments endpoint
+@app.post("/v1/payments/batch", response_model=BatchPaymentResult)
+def batch_payments(batch: BatchPaymentRequest, user: str = Depends(get_current_user)):
+    results = []
+    success = 0
+    failed = 0
+    for req in batch.payments:
+        try:
+            # Reuse single payment logic
+            fx_rate = None
+            converted_amount = None
+            target_currency = req.target_currency or req.currency
+            if req.target_currency and req.target_currency != req.currency:
+                fx_rate = get_fx_rate(req.currency, req.target_currency)
+                if fx_rate is None:
+                    raise Exception("FX rate not available")
+                converted_amount = round(req.amount * fx_rate, 2)
+            else:
+                converted_amount = req.amount
+            payment_id = cbs_adapter.initiate_payment(req)
+            log_action(user, "batch_initiate_payment", {"payment_id": payment_id, **req.dict(), "fx_rate": fx_rate, "converted_amount": converted_amount, "target_currency": target_currency})
+            results.append({"payment_id": payment_id, "status": "pending", "amount": req.amount, "currency": req.currency, "converted_amount": converted_amount, "target_currency": target_currency})
+            success += 1
+        except Exception as e:
+            results.append({"error": str(e), "payment": req.dict()})
+            failed += 1
+    return BatchPaymentResult(results=results, summary={"success": success, "failed": failed, "total": len(batch.payments)})
 
 # Simple FX rates table (for demo)
 FX_RATES = {
