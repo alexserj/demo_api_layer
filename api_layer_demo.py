@@ -1,3 +1,55 @@
+from typing import List, Dict
+class BatchPaymentRequest(BaseModel):
+    payments: List[PaymentRequest]
+
+class BatchPaymentResult(BaseModel):
+    results: List[Dict]
+    summary: Dict
+# Batch payments endpoint
+@app.post("/v1/payments/batch", response_model=BatchPaymentResult)
+def batch_payments(batch: BatchPaymentRequest, user: str = Depends(get_current_user)):
+    results = []
+    success = 0
+    failed = 0
+    for req in batch.payments:
+        try:
+            # Reuse single payment logic
+            fx_rate = None
+            converted_amount = None
+            target_currency = req.target_currency or req.currency
+            if req.target_currency and req.target_currency != req.currency:
+                fx_rate = get_fx_rate(req.currency, req.target_currency)
+                if fx_rate is None:
+                    raise Exception("FX rate not available")
+                converted_amount = round(req.amount * fx_rate, 2)
+            else:
+                converted_amount = req.amount
+            payment_id = cbs_adapter.initiate_payment(req)
+            log_action(user, "batch_initiate_payment", {"payment_id": payment_id, **req.dict(), "fx_rate": fx_rate, "converted_amount": converted_amount, "target_currency": target_currency})
+            results.append({"payment_id": payment_id, "status": "pending", "amount": req.amount, "currency": req.currency, "converted_amount": converted_amount, "target_currency": target_currency})
+            success += 1
+        except Exception as e:
+            results.append({"error": str(e), "payment": req.dict()})
+            failed += 1
+    return BatchPaymentResult(results=results, summary={"success": success, "failed": failed, "total": len(batch.payments)})
+
+# Reconciliation endpoint
+@app.get("/v1/payments/reconciliation")
+def reconciliation():
+    all_payments = []
+    for pid, pdata in cbs_adapter.payments.items():
+        req = pdata["request"]
+        all_payments.append({
+            "payment_id": pid,
+            "from_account": req["from_account"],
+            "to_account": req["to_account"],
+            "amount": req["amount"],
+            "currency": req["currency"],
+            "target_currency": req.get("target_currency"),
+            "status": pdata["status"],
+            "settlement_time": pdata["settlement_time"]
+        })
+    return {"payments": all_payments, "count": len(all_payments)}
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
