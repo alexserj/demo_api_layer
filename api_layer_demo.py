@@ -44,6 +44,17 @@ cbs_adapter = LegacyCBSAdapter()
 # Webhook registry (in-memory for demo)
 webhooks = {}
 
+# Audit log (in-memory for demo)
+audit_log = []
+
+def log_action(user, action, details):
+    audit_log.append({
+        "timestamp": datetime.utcnow().isoformat(),
+        "user": user,
+        "action": action,
+        "details": details
+    })
+
 # JWT config
 SECRET_KEY = "demo_secret_key_change_me"
 ALGORITHM = "HS256"
@@ -87,23 +98,26 @@ class WebhookRegistration(BaseModel):
 
 
 @app.post("/api/payments", response_model=PaymentStatus)
+
 def initiate_payment(req: PaymentRequest, user: str = Depends(get_current_user)):
     payment_id = cbs_adapter.initiate_payment(req)
+    log_action(user, "initiate_payment", {"payment_id": payment_id, **req.dict()})
     return PaymentStatus(payment_id=payment_id, status="pending")
 
 
 @app.get("/api/payments/{payment_id}/status", response_model=PaymentStatus)
+
 def check_status(payment_id: str, user: str = Depends(get_current_user)):
     payment = cbs_adapter.get_status(payment_id)
     if not payment:
+        log_action(user, "check_status_failed", {"payment_id": payment_id})
         raise HTTPException(status_code=404, detail="Payment not found")
+    log_action(user, "check_status", {"payment_id": payment_id, "status": payment["status"]})
     return PaymentStatus(
         payment_id=payment_id,
         status=payment["status"],
         settlement_time=payment["settlement_time"]
     )
-
-
 
 def send_webhook(payment_id, status, settlement_time):
     import requests
@@ -119,15 +133,19 @@ def send_webhook(payment_id, status, settlement_time):
             pass  # Ignore errors for demo
 
 @app.post("/api/payments/{payment_id}/settle", response_model=PaymentStatus)
+
 def instant_settle(payment_id: str, background_tasks: BackgroundTasks, user: str = Depends(get_current_user)):
     payment = cbs_adapter.get_status(payment_id)
     if not payment:
+        log_action(user, "instant_settle_failed", {"payment_id": payment_id})
         raise HTTPException(status_code=404, detail="Payment not found")
     # Simulate async settlement
     def async_settle():
         settled = cbs_adapter.settle_payment(payment_id)
+        log_action(user, "instant_settle", {"payment_id": payment_id, "status": settled["status"], "settlement_time": settled["settlement_time"]})
         send_webhook(payment_id, settled["status"], settled["settlement_time"])
     background_tasks.add_task(async_settle)
+    log_action(user, "instant_settle_requested", {"payment_id": payment_id})
     return PaymentStatus(
         payment_id=payment_id,
         status="settling",
@@ -135,8 +153,10 @@ def instant_settle(payment_id: str, background_tasks: BackgroundTasks, user: str
     )
 
 @app.post("/api/webhooks/register")
+
 def register_webhook(reg: WebhookRegistration, user: str = Depends(get_current_user)):
     webhooks[reg.payment_id] = reg.url
+    log_action(user, "register_webhook", {"payment_id": reg.payment_id, "url": reg.url})
     return {"result": "webhook registered"}
 
 # Token endpoint for demo (single user: demo/demo)
@@ -147,8 +167,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
             data={"sub": form_data.username},
             expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         )
+        log_action(form_data.username, "login_success", {})
         return {"access_token": access_token, "token_type": "bearer"}
     else:
+        log_action(form_data.username, "login_failed", {})
         raise HTTPException(status_code=401, detail="Incorrect username or password")
 
 
@@ -156,3 +178,4 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
 # The LegacyCBSAdapter simulates CBS integration. Replace its methods with real CBS API calls for production use.
 # Webhook endpoint: POST /api/webhooks/register {"payment_id": ..., "url": ...}
 # Settlement is now asynchronous; webhook is called on status change.
+# Audit log is stored in-memory for demo. For production, use a secure, immutable log store.
