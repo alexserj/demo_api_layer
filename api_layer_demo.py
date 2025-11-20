@@ -120,6 +120,35 @@ def get_fx_rate(src, tgt):
 
 @app.post("/api/payments", response_model=PaymentStatus)
 def initiate_payment(req: PaymentRequest, user: str = Depends(get_current_user)):
+    import time
+    # --- Rate limiting ---
+    RATE_LIMIT = 10  # max requests per minute per user
+    WINDOW = 60  # seconds
+    if not hasattr(initiate_payment, "user_requests"):
+        initiate_payment.user_requests = {}
+    now = time.time()
+    user_reqs = initiate_payment.user_requests.setdefault(user, [])
+    # Remove requests older than WINDOW
+    user_reqs = [t for t in user_reqs if now - t < WINDOW]
+    if len(user_reqs) >= RATE_LIMIT:
+        log_action(user, "rate_limit_exceeded", {"count": len(user_reqs)})
+        raise HTTPException(status_code=429, detail="Rate limit exceeded. Try again later.")
+    user_reqs.append(now)
+    initiate_payment.user_requests[user] = user_reqs
+
+    # --- Fraud detection ---
+    FRAUD_AMOUNT = 10000.0  # flag payments over this amount
+    SUSPICIOUS_ACCOUNTS = {"FAKE123", "TEST999"}
+    fraud_flags = []
+    if req.amount > FRAUD_AMOUNT:
+        fraud_flags.append("high_amount")
+    if req.to_account in SUSPICIOUS_ACCOUNTS:
+        fraud_flags.append("suspicious_account")
+    if fraud_flags:
+        log_action(user, "fraud_detected", {"flags": fraud_flags, **req.dict()})
+        raise HTTPException(status_code=403, detail=f"Fraud detected: {', '.join(fraud_flags)}")
+
+    # --- FX conversion ---
     fx_rate = None
     converted_amount = None
     target_currency = req.target_currency or req.currency
