@@ -65,6 +65,14 @@ webhooks = {}
 # Audit log (in-memory for demo)
 audit_log = []
 
+# Metrics (in-memory for demo)
+metrics = {
+    "total_requests": 0,
+    "successful_payments": 0,
+    "rate_limit_hits": 0,
+    "fraud_blocks": 0,
+}
+
 def log_action(user, action, details):
     audit_log.append({
         "timestamp": datetime.utcnow().isoformat(),
@@ -121,6 +129,7 @@ def get_fx_rate(src, tgt):
 @app.post("/api/payments", response_model=PaymentStatus)
 def initiate_payment(req: PaymentRequest, user: str = Depends(get_current_user)):
     import time
+    metrics["total_requests"] += 1
     # --- Rate limiting ---
     RATE_LIMIT = 10  # max requests per minute per user
     WINDOW = 60  # seconds
@@ -131,6 +140,7 @@ def initiate_payment(req: PaymentRequest, user: str = Depends(get_current_user))
     # Remove requests older than WINDOW
     user_reqs = [t for t in user_reqs if now - t < WINDOW]
     if len(user_reqs) >= RATE_LIMIT:
+        metrics["rate_limit_hits"] += 1
         log_action(user, "rate_limit_exceeded", {"count": len(user_reqs)})
         raise HTTPException(status_code=429, detail="Rate limit exceeded. Try again later.")
     user_reqs.append(now)
@@ -145,6 +155,7 @@ def initiate_payment(req: PaymentRequest, user: str = Depends(get_current_user))
     if req.to_account in SUSPICIOUS_ACCOUNTS:
         fraud_flags.append("suspicious_account")
     if fraud_flags:
+        metrics["fraud_blocks"] += 1
         log_action(user, "fraud_detected", {"flags": fraud_flags, **req.dict()})
         raise HTTPException(status_code=403, detail=f"Fraud detected: {', '.join(fraud_flags)}")
 
@@ -161,6 +172,7 @@ def initiate_payment(req: PaymentRequest, user: str = Depends(get_current_user))
     else:
         converted_amount = req.amount
     payment_id = cbs_adapter.initiate_payment(req)
+    metrics["successful_payments"] += 1
     log_action(user, "initiate_payment", {"payment_id": payment_id, **req.dict(), "fx_rate": fx_rate, "converted_amount": converted_amount, "target_currency": target_currency})
     return PaymentStatus(
         payment_id=payment_id,
@@ -171,6 +183,10 @@ def initiate_payment(req: PaymentRequest, user: str = Depends(get_current_user))
         converted_amount=converted_amount,
         target_currency=target_currency
     )
+# Token endpoint for demo (single user: demo/demo)
+@app.get("/api/metrics")
+def get_metrics():
+    return metrics
 
 @app.get("/api/payments/{payment_id}/status", response_model=PaymentStatus)
 
