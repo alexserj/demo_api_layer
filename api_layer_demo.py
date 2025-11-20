@@ -54,7 +54,18 @@ class LegacyCBSAdapter:
         return payment
 
 
+from fastapi.responses import JSONResponse
+from fastapi.requests import Request
+
 app = FastAPI()
+
+# Global error handler for clearer error responses
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "error": type(exc).__name__}
+    )
 
 # Use the adapter for CBS integration
 cbs_adapter = LegacyCBSAdapter()
@@ -216,18 +227,31 @@ def check_status(payment_id: str, user: str = Depends(get_current_user)):
         target_currency=target_currency
     )
 
-def send_webhook(payment_id, status, settlement_time):
+def send_webhook(payment_id, status, settlement_time, max_retries=3):
     import requests
+    import time
     url = webhooks.get(payment_id)
     if url:
-        try:
-            requests.post(url, json={
-                "payment_id": payment_id,
-                "status": status,
-                "settlement_time": settlement_time
-            })
-        except Exception:
-            pass  # Ignore errors for demo
+        delay = 1
+        for attempt in range(max_retries):
+            try:
+                requests.post(url, json={
+                    "payment_id": payment_id,
+                    "status": status,
+                    "settlement_time": settlement_time
+                }, timeout=3)
+                return True
+            except Exception as e:
+                time.sleep(delay)
+                delay *= 2  # Exponential backoff
+        # Log failed webhook delivery
+        audit_log.append({
+            "timestamp": datetime.utcnow().isoformat(),
+            "user": None,
+            "action": "webhook_failed",
+            "details": {"payment_id": payment_id, "url": url, "status": status}
+        })
+    return False
 
 @app.post("/v1/payments/{payment_id}/settle", response_model=PaymentStatus)
 
