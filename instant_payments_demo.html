@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Payments API Layer Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f7f9fa; margin: 0; padding: 0; }
+    .container { max-width: 800px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 32px; }
+    h1 { color: #1a3a5d; }
+    h2 { color: #2d6a4f; margin-top: 32px; }
+    .diagram { text-align: center; margin: 32px 0; }
+    .api-sample { background: #f1f3f4; border-radius: 6px; padding: 16px; font-family: 'Fira Mono', monospace; margin: 16px 0; }
+    .benefits { background: #e9f5e1; border-radius: 6px; padding: 16px; margin: 16px 0; }
+    ul { margin: 0; padding-left: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Instant Payments API Layer Demo</h1>
+    <p>This demo shows how an API layer can enable instant payments on top of legacy banking systems—without a full core replacement.</p>
+
+    <h2>How It Works</h2>
+    <div class="diagram">
+      <img src="https://i.imgur.com/1Q9ZQ2B.png" alt="API Layer Diagram" style="max-width: 100%; height: auto;">
+      <p><em>API Layer bridges modern fintech and legacy CBS for real-time payments</em></p>
+    </div>
+
+    <h2>Example API Endpoints</h2>
+    <div class="api-sample">
+      <strong>Initiate Payment</strong><br>
+      <code>POST /api/payments</code><br>
+      <pre>{
+  "from_account": "DE1234567890",
+  "to_account": "FR0987654321",
+  "amount": 100.00,
+  "currency": "EUR"
+}</pre>
+    </div>
+    <div class="api-sample">
+      <strong>Check Payment Status</strong><br>
+      <code>GET /api/payments/{payment_id}/status</code><br>
+      <pre>{
+  "payment_id": "abc123",
+  "status": "settled",
+  "settlement_time": "2025-11-20T10:15:00Z"
+}</pre>
+    </div>
+    <div class="api-sample">
+      <strong>Instant Settlement</strong><br>
+      <code>POST /api/payments/{payment_id}/settle</code><br>
+      <pre>{
+  "payment_id": "abc123",
+  "result": "success",
+  "settlement_time": "2025-11-20T10:15:02Z"
+}</pre>
+    </div>
+
+    <h2>Business Benefits</h2>
+    <div class="benefits">
+      <ul>
+        <li>Sub-2-second settlement, even on legacy infrastructure</li>
+        <li>Full compliance and audit trail</li>
+        <li>No need for expensive core banking replacement</li>
+        <li>API-first integration: fast rollout, minimal disruption</li>
+        <li>Invisible infrastructure—customers see instant results</li>
+      </ul>
+    </div>
+
+    <h2>Ready to Learn More?</h2>
+    <p>Contact us for a technical brief on integration patterns and real-world benchmarks.</p>
+  </div>
+</body>
+</html>
