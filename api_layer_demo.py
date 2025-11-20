@@ -126,7 +126,7 @@ def get_fx_rate(src, tgt):
         return 1.0
     return FX_RATES.get((src, tgt), None)
 
-@app.post("/api/payments", response_model=PaymentStatus)
+@app.post("/v1/payments", response_model=PaymentStatus)
 def initiate_payment(req: PaymentRequest, user: str = Depends(get_current_user)):
     import time
     metrics["total_requests"] += 1
@@ -184,11 +184,11 @@ def initiate_payment(req: PaymentRequest, user: str = Depends(get_current_user))
         target_currency=target_currency
     )
 # Token endpoint for demo (single user: demo/demo)
-@app.get("/api/metrics")
+@app.get("/v1/metrics")
 def get_metrics():
     return metrics
 
-@app.get("/api/payments/{payment_id}/status", response_model=PaymentStatus)
+@app.get("/v1/payments/{payment_id}/status", response_model=PaymentStatus)
 
 def check_status(payment_id: str, user: str = Depends(get_current_user)):
     payment = cbs_adapter.get_status(payment_id)
@@ -229,7 +229,7 @@ def send_webhook(payment_id, status, settlement_time):
         except Exception:
             pass  # Ignore errors for demo
 
-@app.post("/api/payments/{payment_id}/settle", response_model=PaymentStatus)
+@app.post("/v1/payments/{payment_id}/settle", response_model=PaymentStatus)
 
 
 def instant_settle(payment_id: str, background_tasks: BackgroundTasks, user: str = Depends(get_current_user)):
@@ -265,7 +265,7 @@ def instant_settle(payment_id: str, background_tasks: BackgroundTasks, user: str
         target_currency=target_currency
     )
 
-@app.post("/api/webhooks/register")
+@app.post("/v1/webhooks/register")
 
 def register_webhook(reg: WebhookRegistration, user: str = Depends(get_current_user)):
     webhooks[reg.payment_id] = reg.url
@@ -273,7 +273,7 @@ def register_webhook(reg: WebhookRegistration, user: str = Depends(get_current_u
     return {"result": "webhook registered"}
 
 # Token endpoint for demo (single user: demo/demo)
-@app.post("/api/token")
+@app.post("/v1/token")
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     if form_data.username == "demo" and form_data.password == "demo":
         access_token = create_access_token(
