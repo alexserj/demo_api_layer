@@ -1,10 +1,28 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
-from datetime import timedelta
+from datetime import timedelta, datetime
 from pydantic import BaseModel
+from typing import Optional
 from uuid import uuid4
-from datetime import datetime
+
+# Model classes
+class PaymentRequest(BaseModel):
+    from_account: str
+    to_account: str
+    amount: float
+    currency: str  # Source currency
+    target_currency: Optional[str] = None  # Optional: convert to this currency
+
+class PaymentStatus(BaseModel):
+    payment_id: str
+    status: str
+    settlement_time: Optional[str] = None
+    amount: Optional[float] = None
+    currency: Optional[str] = None
+    fx_rate: Optional[float] = None
+    converted_amount: Optional[float] = None
+    target_currency: Optional[str] = None
 
 # Adapter pattern for legacy CBS integration
 class LegacyCBSAdapter:
@@ -80,30 +98,50 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-class PaymentRequest(BaseModel):
-    from_account: str
-    to_account: str
-    amount: float
-    currency: str
-
-
-class PaymentStatus(BaseModel):
-    payment_id: str
-    status: str
-    settlement_time: str = None
-
 class WebhookRegistration(BaseModel):
     payment_id: str
     url: str
 
 
+# Simple FX rates table (for demo)
+FX_RATES = {
+    ("USD", "EUR"): 0.92,
+    ("EUR", "USD"): 1.09,
+    ("USD", "GBP"): 0.80,
+    ("GBP", "USD"): 1.25,
+    ("EUR", "GBP"): 0.87,
+    ("GBP", "EUR"): 1.15,
+}
+
+def get_fx_rate(src, tgt):
+    if src == tgt:
+        return 1.0
+    return FX_RATES.get((src, tgt), None)
+
 @app.post("/api/payments", response_model=PaymentStatus)
-
 def initiate_payment(req: PaymentRequest, user: str = Depends(get_current_user)):
+    fx_rate = None
+    converted_amount = None
+    target_currency = req.target_currency or req.currency
+    if req.target_currency and req.target_currency != req.currency:
+        fx_rate = get_fx_rate(req.currency, req.target_currency)
+        if fx_rate is None:
+            log_action(user, "initiate_payment_failed", {"reason": "FX rate not found", **req.dict()})
+            raise HTTPException(status_code=400, detail="FX rate not available for requested currency pair")
+        converted_amount = round(req.amount * fx_rate, 2)
+    else:
+        converted_amount = req.amount
     payment_id = cbs_adapter.initiate_payment(req)
-    log_action(user, "initiate_payment", {"payment_id": payment_id, **req.dict()})
-    return PaymentStatus(payment_id=payment_id, status="pending")
-
+    log_action(user, "initiate_payment", {"payment_id": payment_id, **req.dict(), "fx_rate": fx_rate, "converted_amount": converted_amount, "target_currency": target_currency})
+    return PaymentStatus(
+        payment_id=payment_id,
+        status="pending",
+        amount=req.amount,
+        currency=req.currency,
+        fx_rate=fx_rate,
+        converted_amount=converted_amount,
+        target_currency=target_currency
+    )
 
 @app.get("/api/payments/{payment_id}/status", response_model=PaymentStatus)
 
@@ -112,11 +150,25 @@ def check_status(payment_id: str, user: str = Depends(get_current_user)):
     if not payment:
         log_action(user, "check_status_failed", {"payment_id": payment_id})
         raise HTTPException(status_code=404, detail="Payment not found")
+    req = payment["request"]
+    fx_rate = None
+    converted_amount = None
+    target_currency = req.get("target_currency") or req["currency"]
+    if req.get("target_currency") and req["currency"] != req["target_currency"]:
+        fx_rate = get_fx_rate(req["currency"], req["target_currency"])
+        converted_amount = round(req["amount"] * fx_rate, 2) if fx_rate else None
+    else:
+        converted_amount = req["amount"]
     log_action(user, "check_status", {"payment_id": payment_id, "status": payment["status"]})
     return PaymentStatus(
         payment_id=payment_id,
         status=payment["status"],
-        settlement_time=payment["settlement_time"]
+        settlement_time=payment["settlement_time"],
+        amount=req["amount"],
+        currency=req["currency"],
+        fx_rate=fx_rate,
+        converted_amount=converted_amount,
+        target_currency=target_currency
     )
 
 def send_webhook(payment_id, status, settlement_time):
@@ -134,22 +186,38 @@ def send_webhook(payment_id, status, settlement_time):
 
 @app.post("/api/payments/{payment_id}/settle", response_model=PaymentStatus)
 
+
 def instant_settle(payment_id: str, background_tasks: BackgroundTasks, user: str = Depends(get_current_user)):
     payment = cbs_adapter.get_status(payment_id)
     if not payment:
         log_action(user, "instant_settle_failed", {"payment_id": payment_id})
         raise HTTPException(status_code=404, detail="Payment not found")
+    req = payment["request"]
+    fx_rate = None
+    converted_amount = None
+    target_currency = req.get("target_currency") or req["currency"]
+    if req.get("target_currency") and req["currency"] != req["target_currency"]:
+        fx_rate = get_fx_rate(req["currency"], req["target_currency"])
+        converted_amount = round(req["amount"] * fx_rate, 2) if fx_rate else None
+    else:
+        converted_amount = req["amount"]
     # Simulate async settlement
     def async_settle():
         settled = cbs_adapter.settle_payment(payment_id)
-        log_action(user, "instant_settle", {"payment_id": payment_id, "status": settled["status"], "settlement_time": settled["settlement_time"]})
-        send_webhook(payment_id, settled["status"], settled["settlement_time"])
+        if settled:
+            log_action(user, "instant_settle", {"payment_id": payment_id, "status": settled["status"], "settlement_time": settled["settlement_time"], "fx_rate": fx_rate, "converted_amount": converted_amount, "target_currency": target_currency})
+            send_webhook(payment_id, settled["status"], settled["settlement_time"])
     background_tasks.add_task(async_settle)
     log_action(user, "instant_settle_requested", {"payment_id": payment_id})
     return PaymentStatus(
         payment_id=payment_id,
         status="settling",
-        settlement_time=None
+        settlement_time=None,
+        amount=req["amount"],
+        currency=req["currency"],
+        fx_rate=fx_rate,
+        converted_amount=converted_amount,
+        target_currency=target_currency
     )
 
 @app.post("/api/webhooks/register")
