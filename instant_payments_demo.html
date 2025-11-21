@@ -43,7 +43,81 @@
         <div class="card-value" id="auditLog">1,245</div>
         <div style="color:#888;font-size:0.95em;">Every action tracked</div>
       </div>
+      <div class="card" tabindex="0" aria-label="Customer Satisfaction">
+        <div class="card-title"><span aria-hidden="true">😊</span> Customer Satisfaction</div>
+        <div class="card-value" id="customerSatisfaction">98%</div>
+        <div style="color:#888;font-size:0.95em;">Based on feedback</div>
+      </div>
+      <div class="card" tabindex="0" aria-label="Avg. Settlement Time">
+        <div class="card-title"><span aria-hidden="true">⏱️</span> Avg. Settlement Time</div>
+        <div class="card-value" id="avgSettlement">1.7s</div>
+        <div style="color:#888;font-size:0.95em;">Instant payments</div>
+      </div>
+      <div class="card" tabindex="0" aria-label="Compliance Rate">
+        <div class="card-title"><span aria-hidden="true">✔️</span> Compliance Rate</div>
+        <div class="card-value" id="complianceRate">100%</div>
+        <div style="color:#888;font-size:0.95em;">Audit-ready</div>
+      </div>
     </div>
+    <h2>ROI Calculator</h2>
+    <div style="background:#f1f3f4;border-radius:12px;padding:28px;margin-bottom:32px;max-width:600px;margin-left:auto;margin-right:auto;">
+      <label for="roiPayments">Monthly Payments:</label>
+      <input type="number" id="roiPayments" value="1000" min="1" style="width:100px;margin:0 12px 0 8px;">
+      <label for="roiCost">Cost per Payment (Legacy):</label>
+      <input type="number" id="roiCost" value="2" min="0" step="0.01" style="width:80px;margin:0 12px 0 8px;">
+      <button class="action-btn" onclick="calcROI()" style="margin-top:18px;">Calculate ROI</button>
+      <div id="roiResult" style="margin-top:18px;font-size:1.1em;color:#2d6a4f;font-weight:600;"></div>
+    </div>
+    <h2>Video Testimonial</h2>
+    <div style="background:#e9f5e1;border-radius:12px;padding:28px;margin-bottom:32px;max-width:600px;margin-left:auto;margin-right:auto;text-align:center;">
+      <iframe width="420" height="236" src="https://www.youtube.com/embed/1Q9ZQ2B" title="Client Testimonial" frameborder="0" allowfullscreen style="border-radius:8px;"></iframe>
+      <div style="margin-top:12px;color:#2d6a4f;font-size:1.08em;font-weight:500;">“New Wave Devs helped us achieve instant payments and compliance. Highly recommended!”</div>
+    </div>
+    <h2>Legacy vs. API-Enabled Payments</h2>
+    <div style="overflow-x:auto;margin-bottom:32px;">
+      <table style="width:100%;border-collapse:collapse;background:#f1f3f4;border-radius:12px;">
+        <thead>
+          <tr style="background:#e9f5e1;color:#1a3a5d;font-weight:600;">
+            <th style="padding:12px 8px;border-bottom:1px solid #ddd;">Feature</th>
+            <th style="padding:12px 8px;border-bottom:1px solid #ddd;">Legacy Payments</th>
+            <th style="padding:12px 8px;border-bottom:1px solid #ddd;">API-Enabled Payments</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:10px 8px;">Settlement Speed</td>
+            <td style="padding:10px 8px;">Hours to Days</td>
+            <td style="padding:10px 8px;">Seconds</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 8px;">Cost per Payment</td>
+            <td style="padding:10px 8px;">$2.00</td>
+            <td style="padding:10px 8px;">$0.20</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 8px;">Compliance & Audit</td>
+            <td style="padding:10px 8px;">Manual, error-prone</td>
+            <td style="padding:10px 8px;">Automated, 100% tracked</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 8px;">Customer Experience</td>
+            <td style="padding:10px 8px;">Delayed, uncertain</td>
+            <td style="padding:10px 8px;">Instant, transparent</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+<script>
+  function calcROI() {
+    var payments = parseInt(document.getElementById('roiPayments').value) || 0;
+    var legacyCost = parseFloat(document.getElementById('roiCost').value) || 0;
+    var apiCost = 0.2; // Example API cost per payment
+    var savings = (legacyCost - apiCost) * payments;
+    var percent = legacyCost > 0 ? Math.round((savings / (legacyCost * payments)) * 100) : 0;
+    var result = 'Estimated monthly savings: <span style="color:#1a3a5d;">$' + savings.toFixed(2) + '</span> (' + percent + '% reduction)';
+    document.getElementById('roiResult').innerHTML = result;
+  }
+</script>
 
     <canvas id="paymentsChart" width="800" height="200" style="margin:32px 0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);"></canvas>
 
@@ -97,17 +171,6 @@
       <blockquote style="margin:0 0 16px 0;font-size:1.1em;color:#2d6a4f;">“We reduced payment settlement time from hours to seconds—our customers love it!”<br><span style="color:#888;font-size:0.95em;">— Head of Payments, Global Bank</span></blockquote>
       <blockquote style="margin:0;font-size:1.1em;color:#2d6a4f;">“Compliance audits are now a breeze. Every action is tracked and reportable.”<br><span style="color:#888;font-size:0.95em;">— Compliance Officer, Fintech Partner</span></blockquote>
     </div>
-
-    <h2>Contact Us</h2>
-    <form style="background:#f1f3f4;border-radius:8px;padding:24px;margin-bottom:32px;" aria-label="Contact form">
-      <label for="name">Name:</label><br>
-      <input type="text" id="name" name="name" style="width:100%;padding:8px;margin-bottom:12px;" aria-required="true"><br>
-      <label for="email">Email:</label><br>
-      <input type="email" id="email" name="email" style="width:100%;padding:8px;margin-bottom:12px;" aria-required="true"><br>
-      <label for="message">Message:</label><br>
-      <textarea id="message" name="message" rows="3" style="width:100%;padding:8px;margin-bottom:12px;" aria-required="true"></textarea><br>
-      <button type="button" class="action-btn" onclick="showResult('Thank you! We will contact you soon.')">Send</button>
-    </form>
 
     <h2>FAQ</h2>
     <div style="background:#f1f3f4;border-radius:8px;padding:24px;margin-bottom:32px;">
@@ -236,8 +299,32 @@
 
   .dashboard {
     display: flex;
-    gap: 40px;
+    flex-wrap: wrap;
+    gap: 32px;
     margin: 44px 0;
+    justify-content: center;
+  }
+  .dashboard .card {
+    flex: 0 1 calc(33% - 32px);
+    min-width: 260px;
+    max-width: 320px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 900px) {
+    .dashboard .card {
+      flex: 0 1 calc(50% - 32px);
+      min-width: 220px;
+    }
+  }
+  @media (max-width: 600px) {
+    .dashboard {
+      gap: 16px;
+    }
+    .dashboard .card {
+      flex: 1 1 100%;
+      min-width: 160px;
+      max-width: 100%;
+    }
   }
 
   .card {
