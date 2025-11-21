@@ -5,52 +5,49 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Business Demo: Instant Payments API Layer</title>
-  <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fb; margin: 0; }
-    .container { max-width: 900px; margin: 40px auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 40px; }
-    h1 { color: #1a3a5d; margin-bottom: 8px; }
-    h2 { color: #2d6a4f; margin-top: 32px; }
-    .intro { font-size: 1.15em; color: #444; margin-bottom: 24px; }
-    .dashboard { display: flex; gap: 32px; margin: 32px 0; }
-    .card { background: #f1f3f4; border-radius: 8px; padding: 24px; flex: 1; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-    .card-title { font-size: 1.1em; color: #2d6a4f; margin-bottom: 8px; }
-    .card-value { font-size: 2.2em; color: #1a3a5d; margin-bottom: 4px; }
-    .actions { display: flex; gap: 24px; margin: 32px 0; justify-content: center; }
-    .action-btn { background: #2d6a4f; color: #fff; border: none; border-radius: 6px; padding: 16px 32px; font-size: 1em; cursor: pointer; transition: background 0.2s; }
-    .action-btn:hover { background: #1a3a5d; }
-    .result { background: #e9f5e1; border-radius: 6px; padding: 18px; margin: 24px 0; font-size: 1.1em; color: #2d6a4f; text-align: center; display: none; }
-    .benefits { background: #e9f5e1; border-radius: 8px; padding: 24px; margin: 32px 0; }
-    ul { margin: 0; padding-left: 22px; }
-    .footer { text-align: center; color: #888; margin-top: 40px; font-size: 0.95em; }
-  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Business Demo: Instant Payments API Layer</h1>
+  <div class="container" aria-label="Instant Payments Demo">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h1>Business Demo: Instant Payments API Layer</h1>
+      <select id="langSelect" aria-label="Select language" onchange="changeLang()">
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+        <option value="es">Español</option>
+      </select>
+    </div>
     <div class="intro">
       <strong>Modernize legacy banking with instant, secure, and compliant payments—no core replacement required.</strong><br>
       This demo shows how our API layer transforms business outcomes for banks, partners, and customers.
     </div>
 
-    <div class="dashboard">
-      <div class="card">
-        <div class="card-title">Total Payments</div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-weight:bold;color:#2d6a4f;">Live API Status:</span>
+      <span id="apiStatus" style="background:#e9f5e1;color:#2d6a4f;padding:6px 16px;border-radius:16px;font-weight:bold;">All systems operational</span>
+    </div>
+
+    <div class="dashboard" role="region" aria-label="Business Metrics Dashboard">
+      <div class="card" tabindex="0" aria-label="Total Payments">
+        <div class="card-title"><span aria-hidden="true">💸</span> Total Payments</div>
         <div class="card-value" id="paymentsCount">1,245</div>
         <div style="color:#888;font-size:0.95em;">Processed instantly</div>
       </div>
-      <div class="card">
-        <div class="card-title">Fraud Blocks</div>
+      <div class="card" tabindex="0" aria-label="Fraud Blocks">
+        <div class="card-title"><span aria-hidden="true">🛡️</span> Fraud Blocks</div>
         <div class="card-value" id="fraudBlocks">7</div>
         <div style="color:#888;font-size:0.95em;">Suspicious stopped</div>
       </div>
-      <div class="card">
-        <div class="card-title">Compliance Log Entries</div>
+      <div class="card" tabindex="0" aria-label="Compliance Log Entries">
+        <div class="card-title"><span aria-hidden="true">📋</span> Compliance Log Entries</div>
         <div class="card-value" id="auditLog">1,245</div>
         <div style="color:#888;font-size:0.95em;">Every action tracked</div>
       </div>
     </div>
 
-    <div class="actions">
+    <canvas id="paymentsChart" width="800" height="200" style="margin:32px 0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);"></canvas>
+
+    <div class="actions" role="region" aria-label="Business Actions">
       <button class="action-btn" onclick="showResult('Payment sent instantly!')" title="Send a payment in any currency, instantly.">Send Instant Payment</button>
       <button class="action-btn" onclick="showResult('Batch payments processed!')" title="Process multiple payments at once.">Batch Payments</button>
       <button class="action-btn" onclick="showResult('Audit log entry created!')" title="Track every action for compliance.">View Audit Log</button>
@@ -58,32 +55,316 @@
       <button class="action-btn" onclick="showResult('Real-time update sent!')" title="Partners and customers notified instantly.">Send Real-Time Update</button>
     </div>
 
-    <div class="result" id="resultBox"></div>
+    <div class="result" id="resultBox" role="status" aria-live="polite"></div>
 
-    <h2>Business Benefits</h2>
-    <div class="benefits">
-      <ul>
-        <li><strong>Instant settlement</strong>—even on legacy infrastructure</li>
-        <li><strong>Full compliance</strong>—secure audit trail for every action</li>
-        <li><strong>No core replacement</strong>—minimal disruption, fast rollout</li>
-        <li><strong>Multi-currency & batch</strong>—expand business reach</li>
-        <li><strong>Real-time notifications</strong>—partners and customers see results instantly</li>
-        <li><strong>Fraud protection</strong>—built-in checks for peace of mind</li>
-      </ul>
+    <h2>Scenario Walkthrough</h2>
+    <div style="background:#f1f3f4;border-radius:8px;padding:24px;margin-bottom:32px;">
+      <ol>
+        <li><strong>Customer requests payment</strong> — API instantly checks for fraud and compliance.</li>
+        <li><strong>Currency conversion</strong> — Payment is converted if needed.</li>
+        <li><strong>Instant settlement</strong> — Payment is processed and settled in seconds.</li>
+        <li><strong>Real-time notification</strong> — Partners and customers are notified immediately.</li>
+        <li><strong>Audit log entry</strong> — Every action is tracked for compliance.</li>
+      </ol>
+    </div>
+
+    <h2>Feature Highlights</h2>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;">
+      <div class="card" style="flex:1;min-width:180px;">
+        <div class="card-title"><span aria-hidden="true">⚡</span> Instant Payments</div>
+        <div style="color:#444;">Sub-2-second settlement, even on legacy infrastructure.</div>
+      </div>
+      <div class="card" style="flex:1;min-width:180px;">
+        <div class="card-title"><span aria-hidden="true">🌍</span> Multi-currency</div>
+        <div style="color:#444;">Pay in any currency, with automatic conversion.</div>
+      </div>
+      <div class="card" style="flex:1;min-width:180px;">
+        <div class="card-title"><span aria-hidden="true">🔒</span> Compliance</div>
+        <div style="color:#444;">Full audit trail for every action.</div>
+      </div>
+      <div class="card" style="flex:1;min-width:180px;">
+        <div class="card-title"><span aria-hidden="true">📦</span> Batch Payments</div>
+        <div style="color:#444;">Process hundreds of payments at once.</div>
+      </div>
+      <div class="card" style="flex:1;min-width:180px;">
+        <div class="card-title"><span aria-hidden="true">🔔</span> Real-Time Updates</div>
+        <div style="color:#444;">Instant notifications for partners and customers.</div>
+      </div>
+    </div>
+
+    <h2>Customer Testimonials</h2>
+    <div style="background:#e9f5e1;border-radius:8px;padding:24px;margin-bottom:32px;">
+      <blockquote style="margin:0 0 16px 0;font-size:1.1em;color:#2d6a4f;">“We reduced payment settlement time from hours to seconds—our customers love it!”<br><span style="color:#888;font-size:0.95em;">— Head of Payments, Global Bank</span></blockquote>
+      <blockquote style="margin:0;font-size:1.1em;color:#2d6a4f;">“Compliance audits are now a breeze. Every action is tracked and reportable.”<br><span style="color:#888;font-size:0.95em;">— Compliance Officer, Fintech Partner</span></blockquote>
+    </div>
+
+    <h2>Contact Us</h2>
+    <form style="background:#f1f3f4;border-radius:8px;padding:24px;margin-bottom:32px;" aria-label="Contact form">
+      <label for="name">Name:</label><br>
+      <input type="text" id="name" name="name" style="width:100%;padding:8px;margin-bottom:12px;" aria-required="true"><br>
+      <label for="email">Email:</label><br>
+      <input type="email" id="email" name="email" style="width:100%;padding:8px;margin-bottom:12px;" aria-required="true"><br>
+      <label for="message">Message:</label><br>
+      <textarea id="message" name="message" rows="3" style="width:100%;padding:8px;margin-bottom:12px;" aria-required="true"></textarea><br>
+      <button type="button" class="action-btn" onclick="showResult('Thank you! We will contact you soon.')">Send</button>
+    </form>
+
+    <h2>FAQ</h2>
+    <div style="background:#f1f3f4;border-radius:8px;padding:24px;margin-bottom:32px;">
+      <strong>Q: Do I need to replace my core banking system?</strong><br>
+      <span>A: No! Our API layer works on top of your existing infrastructure.</span><br><br>
+      <strong>Q: How fast are payments processed?</strong><br>
+      <span>A: Most payments settle in under 2 seconds.</span><br><br>
+      <strong>Q: Is compliance and audit logging included?</strong><br>
+      <span>A: Yes, every action is tracked for full compliance.</span><br><br>
+      <strong>Q: Can I pay in any currency?</strong><br>
+      <span>A: Yes, multi-currency and FX conversion are built-in.</span>
     </div>
 
     <div class="footer">
-      <strong>Ready to transform your payments?</strong><br>
-      Contact us for a business briefing or technical deep dive.
+      <div class="nwd-links">
+        <a href="https://newwavedevs.com/about/" target="_blank">About</a>
+        <a href="https://newwavedevs.com/careers/" target="_blank">Careers</a>
+        <a href="https://newwavedevs.com/blog/" target="_blank">Blog</a>
+        <a href="https://newwavedevs.com/cases/" target="_blank">Cases</a>
+        <a href="https://newwavedevs.com/referral-program/" target="_blank">Referral Program</a>
+        <a href="https://newwavedevs.com/contact/" target="_blank">Hire Us</a>
+        <a href="https://newwavedevs.com/questions-and-answers/" target="_blank">FAQ</a>
+        <a href="https://newwavedevs.com/privacy-policy/" target="_blank">Privacy Policy</a>
+        <a href="https://www.instagram.com/newwavedevs/" target="_blank">Instagram</a>
+        <a href="https://www.behance.net/newwavedevs1/" target="_blank">Behance</a>
+        <a href="https://www.linkedin.com/company/new-wave-devs/" target="_blank">LinkedIn</a>
+        <a href="https://www.upwork.com/agencies/1164175694375657472/" target="_blank">Upwork</a>
+      </div>
+      
+      <!-- <strong>Ready to transform your payments?</strong><br>
+      Contact us for a business briefing or technical deep dive.<br>
+      &copy; New Wave Devs. All Rights Reserved 2025. -->
+
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <img src="https://newwavedevs.com/wp-content/uploads/2024/05/logo-1.gif" alt="New Wave Devs logo" />
+        </div>
+        <div>
+          <span style="font-size:1.1em;color:#1a3a5d;font-weight:600;">Powered by <a href="https://newwavedevs.com/"
+              target="_blank" style="color:#2d6a4f;text-decoration:none;">New Wave Devs</a></span><br>
+          <span style="font-size:0.98em;color:#888;">Your Trusted IT Staff Augmentation Partner</span>
+        </div>
+      </div>
     </div>
+  <img src="https://newwavedevs.com/wp-content/themes/nwd_seo/assets/img/icons/arrow-down-right-set-dark.svg" class="arrow" alt="arrow" />
+  <img src="https://newwavedevs.com/wp-content/themes/nwd_seo/assets/img/laces/3-dark.svg" class="lace-bottom" alt="lace bottom" />
   </div>
-  <script>
-    function showResult(msg) {
-      var box = document.getElementById('resultBox');
-      box.innerText = msg;
-      box.style.display = 'block';
-      setTimeout(function(){ box.style.display = 'none'; }, 2500);
-    }
-  </script>
 </body>
 </html>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  function showResult(msg) {
+    var box = document.getElementById('resultBox');
+    box.innerText = msg;
+    box.style.display = 'block';
+    setTimeout(function(){ box.style.display = 'none'; }, 2500);
+  }
+  // Chart.js demo chart
+  window.onload = function() {
+    var ctx = document.getElementById('paymentsChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+          label: 'Payments Volume',
+          data: [180, 220, 300, 250, 400, 320, 420],
+          backgroundColor: 'rgba(45,106,79,0.12)',
+          borderColor: '#2d6a4f',
+          borderWidth: 2,
+          pointBackgroundColor: '#1a3a5d',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  };
+  // Localization demo (static)
+  function changeLang() {
+    var lang = document.getElementById('langSelect').value;
+    showResult('Language changed to ' + lang + ' (demo only)');
+  }
+</script>
+
+<style>
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #f4f6fb 60%, #e9f5e1 100%);
+    margin: 0;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 56px auto 40px auto;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 32px rgba(26, 58, 93, 0.10);
+    padding: 56px 48px 40px 48px;
+    position: relative;
+  }
+
+  h1 {
+    color: #1a3a5d;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  h2 {
+    color: #2d6a4f;
+    margin-top: 36px;
+  }
+
+  .intro {
+    font-size: 1.18em;
+    color: #444;
+    margin-bottom: 28px;
+  }
+
+  .dashboard {
+    display: flex;
+    gap: 40px;
+    margin: 44px 0;
+  }
+
+  .card {
+    background: #f1f3f4;
+    border-radius: 16px;
+    padding: 32px;
+    flex: 1;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(26, 58, 93, 0.04);
+  }
+
+  .card-title {
+    font-size: 1.13em;
+    color: #2d6a4f;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  .card-value {
+    font-size: 2.3em;
+    color: #1a3a5d;
+    margin-bottom: 6px;
+    font-weight: 700;
+  }
+
+  .actions {
+    display: flex;
+    gap: 28px;
+    margin: 36px 0;
+    justify-content: center;
+  }
+
+  .action-btn {
+    background: linear-gradient(90deg, #1a3a5d 60%, #ffd600 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 18px 36px;
+    font-size: 1.05em;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(26, 58, 93, 0.04);
+    transition: background 0.2s;
+  }
+
+  .action-btn:hover {
+    background: linear-gradient(90deg, #2d6a4f 60%, #ffd600 100%);
+  }
+
+  .result {
+    background: #e9f5e1;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 28px 0;
+    font-size: 1.13em;
+    color: #2d6a4f;
+    text-align: center;
+    display: none;
+    font-weight: 600;
+  }
+
+  .benefits {
+    background: #e9f5e1;
+    border-radius: 12px;
+    padding: 28px;
+    margin: 36px 0;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 24px;
+  }
+
+  .footer {
+    text-align: center;
+    color: #888;
+    margin-top: 48px;
+    font-size: 1em;
+  }
+
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 8px;
+    margin-top: 24px;
+  }
+
+  .footer-logo img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .nwd-links {
+    margin-top: 12px;
+    text-align: center;
+  }
+
+  .nwd-links a {
+    color: #1a3a5d;
+    text-decoration: none;
+    margin: 0 10px;
+    font-weight: 500;
+  }
+
+  .nwd-links a:hover {
+    color: #ffd600;
+    text-decoration: underline;
+  }
+
+  .arrow {
+    position: absolute;
+    bottom: -24px;
+    left: 0;
+    width: 80px;
+    opacity: 0.10;
+  }
+
+  .lace-bottom {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100vw;
+    min-width: 960px;
+    z-index: -1;
+    opacity: 0.10;
+    pointer-events: none;
+  }
+</style>
