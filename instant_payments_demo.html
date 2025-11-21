@@ -9,12 +9,16 @@
   <div class="container" aria-label="Instant Payments Demo">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <h1>Business Demo: Instant Payments API Layer</h1>
-      <select id="langSelect" aria-label="Select language" onchange="changeLang()">
+      <select id="langSelect" aria-label="Select language" onchange="changeLangBanner()">
         <option value="en">English</option>
         <option value="fr">Français</option>
         <option value="de">Deutsch</option>
         <option value="es">Español</option>
       </select>
+    </div>
+    <div id="lang-result"
+      style="background:#e9f5e1;color:#2d6a4f;padding:10px 20px;border-radius:8px;margin:12px 0;display:none;font-weight:600;text-align:center;max-width:320px;">
+      <!-- Result will appear here -->
     </div>
     <div class="intro">
       <strong>Modernize legacy banking with instant, secure, and compliant payments—no core replacement required.</strong><br>
@@ -419,6 +423,15 @@ Body:
         button.textContent = 'Copy';
       }, 2000);
     });
+  }
+
+  // Language change demo
+  function changeLangBanner() {
+    var lang = document.getElementById('langSelect').value;
+    var resultBox = document.getElementById('lang-result');
+    resultBox.innerText = 'Language changed to ' + lang + ' (demo only)';
+    resultBox.style.display = 'block';
+    setTimeout(function () { resultBox.style.display = 'none'; }, 2500);
   }
 </script>
 
