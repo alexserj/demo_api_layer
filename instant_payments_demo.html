@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -68,11 +67,7 @@
       <button class="action-btn" onclick="calcROI()" style="margin-top:18px;">Calculate ROI</button>
       <div id="roiResult" style="margin-top:18px;font-size:1.1em;color:#2d6a4f;font-weight:600;"></div>
     </div>
-    <h2>Video Testimonial</h2>
-    <div style="background:#e9f5e1;border-radius:12px;padding:28px;margin-bottom:32px;max-width:600px;margin-left:auto;margin-right:auto;text-align:center;">
-      <iframe width="420" height="236" src="https://www.youtube.com/embed/1Q9ZQ2B" title="Client Testimonial" frameborder="0" allowfullscreen style="border-radius:8px;"></iframe>
-      <div style="margin-top:12px;color:#2d6a4f;font-size:1.08em;font-weight:500;">“New Wave Devs helped us achieve instant payments and compliance. Highly recommended!”</div>
-    </div>
+
     <h2>Legacy vs. API-Enabled Payments</h2>
     <div style="overflow-x:auto;margin-bottom:32px;">
       <table style="width:100%;border-collapse:collapse;background:#f1f3f4;border-radius:12px;">
@@ -107,17 +102,6 @@
         </tbody>
       </table>
     </div>
-<script>
-  function calcROI() {
-    var payments = parseInt(document.getElementById('roiPayments').value) || 0;
-    var legacyCost = parseFloat(document.getElementById('roiCost').value) || 0;
-    var apiCost = 0.2; // Example API cost per payment
-    var savings = (legacyCost - apiCost) * payments;
-    var percent = legacyCost > 0 ? Math.round((savings / (legacyCost * payments)) * 100) : 0;
-    var result = 'Estimated monthly savings: <span style="color:#1a3a5d;">$' + savings.toFixed(2) + '</span> (' + percent + '% reduction)';
-    document.getElementById('roiResult').innerHTML = result;
-  }
-</script>
 
     <canvas id="paymentsChart" width="800" height="200" style="margin:32px 0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);"></canvas>
 
@@ -130,6 +114,120 @@
     </div>
 
     <div class="result" id="resultBox" role="status" aria-live="polite"></div>
+
+    <!-- API Example Modal -->
+    <div id="api-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>API Request Example</h2>
+          <button class="close-btn" onclick="closeAPIModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="endpoint-name">
+            <span class="badge">POST</span>
+            <span class="endpoint-text">Send Instant Payment</span>
+          </div>
+          <!-- Request section -->
+          <div class="api-section">
+            <div class="section-header">
+              <span class="icon">📡</span>
+              <h3>REQUEST</h3>
+            </div>
+            <div class="code-block">
+              <pre><code id="request-code">POST https://api.newwavedevs.com/v1/payments
+
+Headers:
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+Body:
+{
+  "amount": 100.00,
+  "currency": "USD",
+  "recipient_id": "user_abc123",
+  "payment_method": "solana_usdc",
+  "metadata": {
+    "order_id": "order_xyz789"
+  }
+}</code></pre>
+            </div>
+            <button class="copy-btn" onclick="copyCode('request-code')">Copy Request</button>
+          </div>
+          <!-- Response section -->
+          <div class="api-section">
+            <div class="section-header">
+              <span class="icon">✅</span>
+              <h3>RESPONSE <span class="response-time">(1847ms)</span></h3>
+            </div>
+            <div class="code-block">
+              <pre><code id="response-code">{
+  "status": "settled",
+  "transaction_id": "tx_def456",
+  "settlement_time_ms": 1847,
+  "fees": {
+    "amount": 0.02,
+    "currency": "USD"
+  },
+  "blockchain_tx": "5vY8h2pNfL9Qr3TmWxV6aZc8Kd1Jh4xK9Z",
+  "timestamp": "2025-11-21T14:32:18Z"
+}</code></pre>
+            </div>
+            <button class="copy-btn" onclick="copyCode('response-code')">Copy Response</button>
+          </div>
+          <!-- Latency breakdown -->
+          <div class="api-section">
+            <div class="section-header">
+              <span class="icon">⚡</span>
+              <h3>LATENCY BREAKDOWN</h3>
+            </div>
+            <div class="latency-breakdown">
+              <div class="latency-item">
+                <span class="latency-label">API Gateway:</span>
+                <span class="latency-value">45ms</span>
+                <div class="latency-bar">
+                  <div class="latency-fill" style="width: 4.5%"></div>
+                </div>
+              </div>
+              <div class="latency-item">
+                <span class="latency-label">Fraud Check:</span>
+                <span class="latency-value">52ms</span>
+                <div class="latency-bar">
+                  <div class="latency-fill" style="width: 5.2%"></div>
+                </div>
+              </div>
+              <div class="latency-item">
+                <span class="latency-label">Solana Settlement:</span>
+                <span class="latency-value">1710ms</span>
+                <div class="latency-bar">
+                  <div class="latency-fill" style="width: 92.6%"></div>
+                </div>
+              </div>
+              <div class="latency-item">
+                <span class="latency-label">Notification:</span>
+                <span class="latency-value">40ms</span>
+                <div class="latency-bar">
+                  <div class="latency-fill" style="width: 4%"></div>
+                </div>
+              </div>
+              <div class="latency-total">
+                <span class="latency-label">Total:</span>
+                <span class="latency-value">1847ms</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <a href="https://calendly.com/nwd-call/technical-walkthrough-instant-payments-api" class="btn btn-primary" target="_blank">Book Technical Call</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- View API Example button -->
+    <div style="text-align: center; margin: 24px 0;">
+      <button class="view-api-btn" onclick="openAPIModal()">
+        📋 View API Example
+      </button>
+    </div>
 
     <h2>Scenario Walkthrough</h2>
     <div style="background:#f1f3f4;border-radius:8px;padding:24px;margin-bottom:32px;">
@@ -164,12 +262,6 @@
         <div class="card-title"><span aria-hidden="true">🔔</span> Real-Time Updates</div>
         <div style="color:#444;">Instant notifications for partners and customers.</div>
       </div>
-    </div>
-
-    <h2>Customer Testimonials</h2>
-    <div style="background:#e9f5e1;border-radius:8px;padding:24px;margin-bottom:32px;">
-      <blockquote style="margin:0 0 16px 0;font-size:1.1em;color:#2d6a4f;">“We reduced payment settlement time from hours to seconds—our customers love it!”<br><span style="color:#888;font-size:0.95em;">— Head of Payments, Global Bank</span></blockquote>
-      <blockquote style="margin:0;font-size:1.1em;color:#2d6a4f;">“Compliance audits are now a breeze. Every action is tracked and reportable.”<br><span style="color:#888;font-size:0.95em;">— Compliance Officer, Fintech Partner</span></blockquote>
     </div>
 
     <h2>FAQ</h2>
@@ -258,6 +350,87 @@
   function changeLang() {
     var lang = document.getElementById('langSelect').value;
     showResult('Language changed to ' + lang + ' (demo only)');
+  }
+
+  // API Modal functions
+  function openAPIModal() {
+    var modal = document.getElementById('api-modal');
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    // Google Analytics tracking (якщо є GA)
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'api_example_view', {
+        'event_category': 'Demo Interaction',
+        'event_label': 'API Example Modal Opened'
+      });
+    }
+  }
+
+  function closeAPIModal() {
+    var modal = document.getElementById('api-modal');
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  // Close modal on click outside
+  document.addEventListener('click', function(e) {
+    var modal = document.getElementById('api-modal');
+    if (e.target === modal) {
+      closeAPIModal();
+    }
+  });
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      var modal = document.getElementById('api-modal');
+      if (modal.classList.contains('active')) {
+        closeAPIModal();
+      }
+    }
+  });
+
+  // Copy to clipboard function
+  function copyCode(elementId) {
+    var codeElement = document.getElementById(elementId);
+    var text = codeElement.textContent;
+    navigator.clipboard.writeText(text).then(function() {
+      // Find the button that triggered this
+      var button = event.target;
+      var originalText = button.textContent;
+      button.textContent = '✓ Copied!';
+      button.classList.add('copied');
+      setTimeout(function() {
+        button.textContent = originalText;
+        button.classList.remove('copied');
+      }, 2000);
+      // Google Analytics tracking
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'code_copy', {
+          'event_category': 'Demo Interaction',
+          'event_label': elementId.includes('request') ? 'Request' : 'Response'
+        });
+      }
+    }).catch(function(err) {
+      console.error('Failed to copy:', err);
+      var button = event.target;
+      button.textContent = '✗ Failed';
+      setTimeout(function() {
+        button.textContent = 'Copy';
+      }, 2000);
+    });
+  }
+</script>
+
+<script>
+  function calcROI() {
+    var payments = parseInt(document.getElementById('roiPayments').value) || 0;
+    var legacyCost = parseFloat(document.getElementById('roiCost').value) || 0;
+    var apiCost = 0.2; // Example API cost per payment
+    var savings = (legacyCost - apiCost) * payments;
+    var percent = legacyCost > 0 ? Math.round((savings / (legacyCost * payments)) * 100) : 0;
+    var result = 'Estimated monthly savings: <span style="color:#1a3a5d;">$' + savings.toFixed(2) + '</span> (' + percent + '% reduction)';
+    document.getElementById('roiResult').innerHTML = result;
   }
 </script>
 
@@ -454,4 +627,529 @@
     opacity: 0.10;
     pointer-events: none;
   }
-</style>
+
+  /* Modal styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.7);
+  padding-top: 60px;
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 5% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 90%;
+  max-width: 600px;
+  border-radius: 12px;
+  box-shadow: 0 4px 32px rgba(26, 58, 93, 0.10);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.endpoint-name {
+  display: flex;
+  align-items: center;
+  background: #e9f5e1;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.badge {
+  background: #2d6a4f;
+  color: #fff;
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-size: 0.9em;
+  margin-right: 12px;
+}
+
+.endpoint-text {
+  font-size: 1.1em;
+  color: #1a3a5d;
+  font-weight: 500;
+}
+
+.api-section {
+  background: #f1f3f4;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.icon {
+  font-size: 1.5em;
+  margin-right: 8px;
+}
+
+h3 {
+  font-size: 1.1em;
+  color: #2d6a4f;
+  margin: 0;
+}
+
+.code-block {
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  overflow-x: auto;
+  max-height: 300px;
+  position: relative;
+}
+
+.code-block pre {
+  margin: 0;
+  font-size: 0.9em;
+  color: #333;
+}
+
+.copy-btn {
+  background: #2d6a4f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9em;
+  cursor: pointer;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  transition: background 0.2s;
+}
+
+.copy-btn:hover {
+  background: #1a3a5d;
+}
+
+.response-time {
+  font-size: 0.9em;
+  color: #888;
+  margin-left: 8px;
+}
+
+.latency-breakdown {
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.latency-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.latency-label {
+  color: #333;
+}
+
+.latency-value {
+  color: #2d6a4f;
+  font-weight: 500;
+}
+
+.latency-bar {
+  flex: 1;
+  height: 8px;
+  background: #e1e1e1;
+  border-radius: 4px;
+  margin-left: 12px;
+  position: relative;
+}
+
+.latency-fill {
+  height: 100%;
+  background: #2d6a4f;
+  border-radius: 4px;
+}
+
+.modal-footer {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.btn-primary {
+  background: #2d6a4f;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: #1a3a5d;
+}
+
+.view-api-btn {
+  background: #ffd600;
+  color: #1a3a5d;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1.1em;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.view-api-btn:hover {
+  background: #ffc107;
+}
+
+/* API Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease;
+}
+
+.modal.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: #1a1a1a;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h2 {
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 32px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+.close-btn:hover {
+  transform: rotate(90deg);
+}
+
+.modal-body {
+  padding: 32px;
+}
+
+.endpoint-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.endpoint-name .badge {
+  background: #ffd600;
+  color: #0d0d0d;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.endpoint-name .endpoint-text {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.api-section {
+  margin-bottom: 32px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.section-header .icon {
+  font-size: 20px;
+}
+
+.section-header h3 {
+  color: #ffd600;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.response-time {
+  color: #B0B0B0;
+  font-weight: 400;
+}
+
+.code-block {
+  background: #0d0d0d;
+  border-radius: 6px;
+  padding: 16px;
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.code-block pre {
+  margin: 0;
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.code-block code {
+  color: #e8e8e8;
+}
+
+.copy-btn {
+  background: rgba(255, 214, 0, 0.1);
+  border: 1px solid #ffd600;
+  color: #ffd600;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: #ffd600;
+  color: #0d0d0d;
+}
+
+.copy-btn.copied {
+  background: #4ADE80;
+  border-color: #4ADE80;
+  color: #0d0d0d;
+}
+
+.latency-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.latency-item {
+  display: grid;
+  grid-template-columns: 180px 80px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.latency-label {
+  color: #B0B0B0;
+  font-size: 14px;
+}
+
+.latency-value {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: right;
+}
+
+.latency-bar {
+  background: rgba(255, 255, 255, 0.1);
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.latency-fill {
+  background: linear-gradient(90deg, #ffd600 0%, #4ADE80 100%);
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.latency-total {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 4px;
+}
+
+.latency-total .latency-value {
+  color: #ffd600;
+  font-size: 16px;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 24px 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  justify-content: center;
+}
+
+.btn {
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-primary {
+  background: #ffd600;
+  color: #0d0d0d;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: #e6c200;
+}
+
+.view-api-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 214, 0, 0.1);
+  border: 1px solid rgba(255, 214, 0, 0.3);
+  color: #1a3a5d;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-api-btn:hover {
+  background: rgba(255, 214, 0, 0.2);
+  border-color: #ffd600;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 16px;
+  }
+
+  .latency-item {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .code-block {
+    font-size: 11px;
+  }
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 214, 0, 0.3);
+  border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 214, 0, 0.5);
+}
