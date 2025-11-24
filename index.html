@@ -537,10 +537,11 @@ Body:
   }
 
   .actions {
-    display: flex;
-    gap: 28px;
-    margin: 36px 0;
-    justify-content: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 28px;
+      margin: 36px 0;
+      justify-content: center;
   }
 
   .action-btn {
@@ -559,6 +560,19 @@ Body:
   .action-btn:hover {
     background: linear-gradient(90deg, #2d6a4f 60%, #ffd600 100%);
   }
+
+    @media (max-width: 600px) {
+      .actions {
+        flex-direction: column;
+        gap: 14px;
+        align-items: stretch;
+      }
+      .action-btn {
+        width: 100%;
+        padding: 16px 0;
+        font-size: 1em;
+      }
+    }
 
   .result {
     background: #e9f5e1;
