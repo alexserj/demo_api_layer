@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-EML1GFYHST"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-EML1GFYHST');
+  </script>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Business Demo: Instant Payments API Layer</title>
@@ -221,7 +230,15 @@ Body:
           </div>
         </div>
         <div class="modal-footer">
-          <a href="https://calendly.com/nwd-call/technical-walkthrough-instant-payments-api?utm_source=demo&utm_medium=api_modal&utm_campaign=technical_call" class="btn btn-primary" target="_blank">Book Technical Call</a>
+          <a href="https://calendly.com/nwd-call/technical-walkthrough-instant-payments-api?utm_source=demo&utm_medium=api_modal&utm_campaign=technical_call"
+            class="btn btn-primary"
+            target="_blank"
+            onclick="gtag('event', 'click', {
+              'event_category': 'calendly',
+              'event_label': 'api_modal'
+            });">
+            Book Technical Call
+          </a>
         </div>
       </div>
     </div>
